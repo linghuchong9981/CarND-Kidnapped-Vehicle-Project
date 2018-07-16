@@ -63,15 +63,14 @@ int main()
         
         if (event == "telemetry") {
           // j[1] is the data JSON object
-
-
+            std::cout << "On message!!!" << std::endl;
           if (!pf.initialized()) {
 
           	// Sense noisy position data from the simulator
 			double sense_x = std::stod(j[1]["sense_x"].get<std::string>());
 			double sense_y = std::stod(j[1]["sense_y"].get<std::string>());
 			double sense_theta = std::stod(j[1]["sense_theta"].get<std::string>());
-
+              std::cout << "Prepare init!!!" << std::endl;
 			pf.init(sense_x, sense_y, sense_theta, sigma_pos);
 		  }
 		  else {
