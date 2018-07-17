@@ -36,7 +36,6 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
         particles.push_back(particle);
     }
 
-
     is_initialized = true;
 }
 
@@ -51,7 +50,6 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
     normal_distribution<double> dist_theta(0, std_pos[2]);
 
 
-    //TODO check是引用还是传值
     for (int i = 0; i < num_particles; ++i) {
         Particle particle = particles[i];
         if (fabs(yaw_rate) > 0.00001) {
@@ -59,8 +57,8 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
             particle.y += (velocity / yaw_rate) * (cos(particle.theta) - cos(particle.theta + yaw_rate * delta_t));
             particle.theta += yaw_rate * delta_t;
         } else {
-            particle.x +=  velocity * delta_t * cos(particle.theta);
-            particle.y +=  velocity * delta_t * sin(particle.theta);
+            particle.x += velocity * delta_t * cos(particle.theta);
+            particle.y += velocity * delta_t * sin(particle.theta);
         }
 
         double x_noise = dist_x(gen);
@@ -74,7 +72,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
     }
 }
 
-void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs> &observations) {
+void ParticleFilter::dataAssociation(std::vector <LandmarkObs> predicted, std::vector <LandmarkObs> &observations) {
     // NOTE: this method will NOT be called by the grading code. But you will probably find it useful to
     //   implement this method and use it as a helper during the updateWeights phase.
 
@@ -83,15 +81,15 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
         for (int j = 0; j < predicted.size(); ++j) {
             double distance = dist(observations[i].x, observations[i].y, predicted[j].x, predicted[j].y);
             if (distance < min_distance) {
-              min_distance = distance;
-              observations[i].id = predicted[j].id;
+                min_distance = distance;
+                observations[i].id = predicted[j].id;
             }
         }
     }
 }
 
 void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
-                                  const  std::vector<LandmarkObs> &observations, const Map &map_landmarks) {
+                                   const std::vector <LandmarkObs> &observations, const Map &map_landmarks) {
     // NOTE: The observations are given in the VEHICLE'S coordinate system. Your particles are located
     //   according to the MAP'S coordinate system. You will need to transform between the two systems.
     //   Keep in mind that this transformation requires both rotation AND translation (but no scaling).
@@ -111,7 +109,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
         Particle particle = particles[i];
 
         // get predict
-        std::vector<LandmarkObs> predicted;
+        std::vector <LandmarkObs> predicted;
 
         for (int k = 0; k < map_landmarks.landmark_list.size(); ++k) {
             Map::single_landmark_s landmark = map_landmarks.landmark_list[k];
@@ -126,33 +124,35 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
         }
 
         //transform
-        std::vector<LandmarkObs> transformed_observations;
+        std::vector <LandmarkObs> transformed_observations;
         for (int j = 0; j < observations.size(); ++j) {
             LandmarkObs obs = observations[j];
-            double t_x = cos(particle.theta)*obs.x - sin(particle.theta)*obs.y + particle.x;
-            double t_y = sin(particle.theta)*obs.x + cos(particle.theta)*obs.y + particle.y;
-            transformed_observations.push_back(LandmarkObs{ observations[j].id, t_x, t_y });
-            }
+            double t_x = cos(particle.theta) * obs.x - sin(particle.theta) * obs.y + particle.x;
+            double t_y = sin(particle.theta) * obs.x + cos(particle.theta) * obs.y + particle.y;
+            transformed_observations.push_back(LandmarkObs{observations[j].id, t_x, t_y});
+        }
 
 
         dataAssociation(predicted, transformed_observations);
 
+        //init weights
         particle.weight = 1.0;
 
+        //update weights
         for (int l = 0; l < transformed_observations.size(); ++l) {
             LandmarkObs observation = transformed_observations[l];
             LandmarkObs associationed;
             for (int m = 0; m < predicted.size(); m++) {
-                if (predicted[m].id == observation.id){
-                  associationed = predicted[m];
-                  break;
+                if (predicted[m].id == observation.id) {
+                    associationed = predicted[m];
+                    break;
                 }
             }
             double gauss_norm = 1 / (2 * M_PI * std_landmark[0] * std_landmark[1]);
-            double exponent = pow(associationed.x - observation.x , 2) / (2 * pow(std_landmark[0], 2))
-                              + pow(associationed.y - observation.y , 2) / (2 * pow(std_landmark[1], 2));
+            double exponent = pow(associationed.x - observation.x, 2) / (2 * pow(std_landmark[0], 2))
+                              + pow(associationed.y - observation.y, 2) / (2 * pow(std_landmark[1], 2));
             double observation_probality = gauss_norm * exp(-1.0 * exponent);
-	           particle.weight *= observation_probality;
+            particle.weight *= observation_probality;
         }
 
         particles[i] = particle;
@@ -166,14 +166,14 @@ void ParticleFilter::resample() {
     // NOTE: You may find std::discrete_distribution helpful here.
     //   http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution
     weights.clear();
-    for (int i = 0; i <particles.size() ; ++i) {
+    for (int i = 0; i < particles.size(); ++i) {
         weights.push_back(particles[i].weight);
     }
 
-    discrete_distribution<> distribution(weights.begin(),weights.end());
+    discrete_distribution<> distribution(weights.begin(), weights.end());
     default_random_engine gen;
 
-    std::vector<Particle> updated;
+    std::vector <Particle> updated;
     for (int j = 0; j < num_particles; ++j) {
         updated.push_back(particles[distribution(gen)]);
     }
